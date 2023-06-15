@@ -7,9 +7,9 @@ def parse_arguments():
     parser.add_argument('--ip_address', type=str, default="0.0.0.0", help='IP address of the server.')
     return parser.parse_args()
 
-def start_flower_server(ip_address: str, port: str = "8080"):
+def start_flower_server(ip_address, port = "8080"):
     # Create the full server address
-    server_address = f"{ip_address}:{port}"
+    server_address = ip_address+":"+port
     
     # Start Flower server
     fl.server.start_server(
