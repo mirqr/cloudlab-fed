@@ -1,6 +1,12 @@
 import flwr as fl
 import argparse
 
+# loggers output all messages to stdout in addition to log file
+import logging
+import sys
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 # Define a function to parse command line arguments
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Flower Server")
