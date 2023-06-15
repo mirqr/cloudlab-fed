@@ -17,7 +17,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 # Load the MNIST dataset
-(x_train, y_train), (x_test, y_test)) = mnist.load_data()
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
 
 # Preprocess the data
 x_train = x_train / 255.0
