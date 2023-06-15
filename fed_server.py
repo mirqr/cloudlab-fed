@@ -25,4 +25,5 @@ def main():
     start_flower_server(args.ip_address)
 
 if __name__ == "__main__":
+    print("STARTTT SERVERRRR")
     main()
