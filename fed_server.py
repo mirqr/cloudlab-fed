@@ -17,7 +17,8 @@ def parse_arguments():
 def start_flower_server(ip_address, port = "8080", rounds = 3):
     # Create the full server address
     server_address = ip_address+":"+port
-    
+    print("----> Server address: "+server_address, 'num_rounds: ', rounds)
+
     strategy = fl.server.strategy.FedAvg(
         fraction_fit=0.1,
         #fraction_eval=0.1,
