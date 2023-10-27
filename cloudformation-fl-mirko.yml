@@ -89,7 +89,7 @@ Resources:
           # COMMON SETUP END
 
           local_ip_server=$(ec2-metadata --local-ipv4  | cut -d " " -f 2)
-          python3 fedtest/fed_server.py --ip_address $local_ip_server --rounds ${TrainingRounds} > server_output.txt           
+          python3 cloudlab-fed/src/fed_server.py --ip_address $local_ip_server --rounds ${TrainingRounds} > server_output.txt           
 
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -144,7 +144,7 @@ Resources:
             echo "${FedServerEC2Instance.PrivateIp}" > server_ip # Server viene creato prima. Sarebbe ancora meglio usare DNS
             server_ip="${FedServerEC2Instance.PrivateIp}"
 
-            python3 fedtest/fed_client.py --ip_address $server_ip > client_output.txt
+            python3 cloudlab-fed/src/fed_client.py --ip_address $server_ip > client_output.txt
 
             
             
