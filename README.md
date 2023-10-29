@@ -27,7 +27,7 @@ This project primary objectives are:
 
 ## NOTE
 
-The project is tailored to fit within **AWS's free-tier** limitations, ensuring minimal expenses while demonstrating a functional federated learning system. Future versions could explore beyond these constraints for enhanced performance.  
+The project is tailored to fit within **AWS's free-tier** limitations, ensuring minimal expenses while demonstrating a functional federated learning system. Future versions could explore beyond these constraints for enhanced performance.   
 
 ## Directory Structure
 
