@@ -2,27 +2,43 @@
 
 This repository contains a demonstration of a Centralized Federated Learning system using AWS CloudFormation to provision the infrastructure and Python scripts to simulate a federated learning server and multiple clients.
 
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Directory Structure](#directory-structure)
+- [Federated Learning](#federated-learning)
+  - [Scripts](#scripts)
+  - [Task](#task)
+- [Architecture Diagram](#architecture-diagram)
+- [System Overview](#system-overview)
+- [Design choices](#design-choices)
+- [Usage](#usage)
+  - [AWS CloudFormation](#aws-cloudformation)
+  - [Running the Federated Learning Scripts](#running-the-federated-learning-scripts)
+
+
 ## Overview
 
 This project primary objectives are:
 
 1. Demonstrate the power of AWS CloudFormation to define and provision AWS infrastructure.
-2. Illustrate the concept of federated learning with a centralized server and multiple clients.
+2. Illustrate the concept of federated learning with a centralized server and multiple clients. [Flower Federated Learning Framework](https://flower.dev/) is used to implement the federated learning system.
 
 ## NOTE
 
-The project is tailored to fit within `AWS's free-tier` limitations, ensuring minimal expenses while demonstrating a functional federated learning system. Future versions could explore beyond these constraints for enhanced performance.
+The project is tailored to fit within **AWS's free-tier** limitations, ensuring minimal expenses while demonstrating a functional federated learning system. Future versions could explore beyond these constraints for enhanced performance.  
 
 ## Directory Structure
 
-/cloudlab-fed
-|-- cloudformation-fl-mirko.yml
-|
-|-- /src
-|   |-- fed_client.py
-|   |-- fed_server.py
-|
-|-- README.md
+cloudlab-fed
+├── README.md
+├── cloudformation-fl-mirko.yml
+├── src
+│   ├── fed_client.py
+│   ├── fed_server.py
+│   └── run_local.sh
+└── template-aws-designer.png
 
 - `cloudformation-fl-mirko.yml`: Contains the AWS CloudFormation template to set up the required AWS infrastructure.
   
@@ -79,10 +95,39 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
 
 ## Usage
 
-1. **AWS CloudFormation**:
+1. **Deploy the AWS CloudFormation Stack via AWS Console**:
     - Navigate to the AWS CloudFormation console.
     - Create a new stack and upload the `cloudformation-fl-mirko.yml`
     - Fill in the required parameters and create the stack. This will provision the EC2 instances and the necessary resources.
 
-2. **Running the Federated Learning Scripts**:
+2. **Deploy the AWS CloudFormation Stack via AWS CLI**:
+    - Clone this repository to your local machine.
+
+    ```bash
+    git clone https://github.com/your-repo-url/cloudlab-fed.git
+    cd cloudlab-fed
+    ```
+
+    - Ensure you have the AWS CLI installed and configured with your AWS credentials and a key pair available in your AWS account.
+    - Run the following command to deploy the CloudFormation stack.
+
+    ```bash
+    aws cloudformation create-stack --stack-name FedStack --template-body file://cloudformation-fl-mirko.yml --parameters ParameterKey=ClientCount,ParameterValue='4' ParameterKey=OperatorEMail,ParameterValue='YOUR_EMAIL' --parameters ParameterKey=KeyName,ParameterValue=YOUR_KEY_PAIR_NAME
+    ```
+
+3. **Monitor the Federated Learning Server**:
     - The EC2 instances, upon startup, will automatically clone this repository and run the federated learning scripts from the `/src` directory.
+    - As clients get instantiated, they'll automatically start the training process and connect to the federated learning server.
+    - Once the CloudFormation stack is successfully deployed, navigate to the EC2 dashboard.
+    - Identify the **`FedServer`** instance. Use your preferred SSH tool to connect to the server or client instances using the provided key pair.
+    - Monitor the progress on the instances terminal or logs
+        - Check 'client_output.txt' and 'server_output.txt' in the / folder for the output of the federated learning server and clients
+
+4. **Terminate and Cleanup**:
+    - Once done, ensure you terminate the CloudFormation stack to avoid incurring any unintended costs.
+    - Navigate to the CloudFormation dashboard, select the deployed stack, and choose "Delete".
+    - Or, run the following command to delete the stack via AWS CLI.
+
+    ```bash
+    aws cloudformation delete-stack --stack-name FedStack
+    ``` 
