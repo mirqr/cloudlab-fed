@@ -3,6 +3,7 @@ import argparse
 
 import flwr as fl
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras.datasets import mnist, fashion_mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten, Dense
@@ -18,7 +19,13 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 # Load model and data (MobileNetV2, CIFAR-10)
-(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+DATA_FRACTION = 0.1
+def get_random_subset(x, y, fraction):
+    indices = np.random.choice(len(x), int(len(x) * fraction), replace=False)
+    return x[indices], y[indices]
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data() # all the dataset
+x_train_client, y_train_client = get_random_subset(x_train, y_train, DATA_FRACTION) # take a fraction of the dataset
+
 model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
 model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
 
@@ -45,8 +52,8 @@ class CifarClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         model.set_weights(parameters)
-        model.fit(x_train, y_train, epochs=1, batch_size=5)
-        return model.get_weights(), len(x_train), {}
+        model.fit(x_train_client, y_train_client, epochs=1, batch_size=5)  # use the client's data subset
+        return model.get_weights(), len(x_train_client), {}
 
     def evaluate(self, parameters, config):
         model.set_weights(parameters)

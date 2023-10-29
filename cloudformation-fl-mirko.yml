@@ -35,6 +35,7 @@ Parameters:
     AllowedPattern: >-
       ([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)
     ConstraintDescription: must be a valid email address.
+    Default: "example@gmail.com"
   EnableScalingPolicy:
     Description: "Set to 'true' to enable the scaling policy or 'false' to disable it."
     Type: String
@@ -108,7 +109,7 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
       VpcId: !Ref VpcId
-  MyLaunchTemplate:
+  ClientsLaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
     Properties:
       LaunchTemplateData: 
@@ -148,7 +149,7 @@ Resources:
 
             
             
-  MyAutoScalingGroup:
+  ClientsAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
       - FedServerEC2Instance
@@ -164,8 +165,8 @@ Resources:
             - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
           TopicARN: !Ref ScalingNotificationTopic
       LaunchTemplate:
-        LaunchTemplateId: !Ref MyLaunchTemplate
-        Version: !GetAtt MyLaunchTemplate.LatestVersionNumber
+        LaunchTemplateId: !Ref ClientsLaunchTemplate
+        Version: !GetAtt ClientsLaunchTemplate.LatestVersionNumber
       AvailabilityZones: 
           - us-east-1a
       VPCZoneIdentifier:
@@ -176,7 +177,7 @@ Resources:
   CpuScalingPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
-      AutoScalingGroupName: !Ref MyAutoScalingGroup # agganciato al gruppo di auto scaling (i client)
+      AutoScalingGroupName: !Ref ClientsAutoScalingGroup # agganciato al gruppo di auto scaling (i client)
       PolicyType: TargetTrackingScaling
       TargetTrackingConfiguration:
         TargetValue: 50.0
