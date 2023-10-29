@@ -31,6 +31,7 @@ The project is tailored to fit within **AWS's free-tier** limitations, ensuring 
 
 ## Directory Structure
 
+```bash
 cloudlab-fed
 ├── README.md
 ├── cloudformation-fl-mirko.yml
@@ -39,6 +40,7 @@ cloudlab-fed
 │   ├── fed_server.py
 │   └── run_local.sh
 └── template-aws-designer.png
+```
 
 - `cloudformation-fl-mirko.yml`: Contains the AWS CloudFormation template to set up the required AWS infrastructure.
   

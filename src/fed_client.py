@@ -23,7 +23,11 @@ DATA_FRACTION = 0.1
 def get_random_subset(x, y, fraction):
     indices = np.random.choice(len(x), int(len(x) * fraction), replace=False)
     return x[indices], y[indices]
-(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data() # all the dataset
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data() 
+
+# normalize 
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
 x_train_client, y_train_client = get_random_subset(x_train, y_train, DATA_FRACTION) # take a fraction of the dataset
 
 model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
@@ -52,7 +56,7 @@ class CifarClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         model.set_weights(parameters)
-        model.fit(x_train_client, y_train_client, epochs=1, batch_size=5)  # use the client's data subset
+        model.fit(x_train_client, y_train_client, epochs=3, batch_size=5)  # use the client's data subset
         return model.get_weights(), len(x_train_client), {}
 
     def evaluate(self, parameters, config):

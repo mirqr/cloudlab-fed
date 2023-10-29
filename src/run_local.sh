@@ -7,7 +7,7 @@ echo "Starting server"
 python fed_server.py --ip_address $ip &
 sleep 3  # Sleep for 3s to give the server enough time to start
 
-for i in `seq 0 1`; do
+for i in `seq 0 4`; do
     echo "Starting client $i"
     python fed_client.py --ip_address $ip &
 done
