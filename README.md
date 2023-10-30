@@ -90,7 +90,7 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
 2. **Scaling based on CPU Utilization**: the auto-scaling group for the clients has a scaling policy based on average CPU utilization. 
     - **Target Tracking Scaling Policy**: it tries to maintain the group's average CPU utilization close to the set target (50% for demonstration puroposes).
 3. **Security**: The **`InstanceSecurityGroup`** opens up all ports for inbound traffic from any IP (0.0.0.0/0). This can be restricted to the required ports, like 8080 generally used by Flower FL framework, and 22 for SSH.
-4. **EC2 Instance Images**: A custom AMI (ami-030c79dfe54c09450), derived from the standard Amazon Linux 2 AMI (HVM) with an SSD Volume Type, has been crafted and published with preloaded packages. This drastically reduces boot time for instances.
+4. **Custom EC2 Instance Images**: A custom AMI (ami-030c79dfe54c09450), derived from the standard Amazon Linux 2 AMI (HVM) with an SSD Volume Type, has been crafted and published with preloaded packages. This drastically reduces boot time for instances.
 5. **Dependencies**: The **`ClientsAutoScalingGroup`** depends on the **`FedServerEC2Instance`**. This ensures the server is up and running before any clients are launched.
 6. **Email Notifications**: The system is set to send email notifications for various scaling events.
 7. **S3 Bucket Interactions**: Initially, the idea was to deploy federated learning scripts to EC2 instances using Amazon S3. However, this approach was set aside due to cost concerns related to data transfers on a free-tier AWS account and to avoid setting up specific IAM permissions for EC2-S3 interaction. Commented lines referencing S3 in the code remain as a hint to this initial consideration and for future development.
@@ -106,7 +106,7 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
     - Clone this repository to your local machine.
 
     ```bash
-    git clone https://github.com/your-repo-url/cloudlab-fed.git
+    git clone https://github.com/mirqr/cloudlab-fed.git
     cd cloudlab-fed
     ```
 
@@ -118,12 +118,15 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
     ```
 
 3. **Monitor the Federated Learning Server**:
-    - The EC2 instances, upon startup, will automatically clone this repository and run the federated learning scripts from the `/src` directory.
-    - As clients get instantiated, they'll automatically start the training process and connect to the federated learning server.
     - Once the CloudFormation stack is successfully deployed, navigate to the EC2 dashboard.
+        - Note: The EC2 instances, upon startup, will automatically clone this repository and run the federated learning scripts from the `/src` directory. As clients get instantiated, they'll automatically start the training process and connect to the federated learning server.
     - Identify the **`FedServer`** instance. Use your preferred SSH tool to connect to the server or client instances using the provided key pair.
-    - Monitor the progress on the instances terminal or logs
-        - Check 'client_output.txt' and 'server_output.txt' in the / folder for the output of the federated learning server and clients
+    - Monitor the progress on the instances **terminal**
+        - Check `client_output.txt` and `server_output.txt` in the root (`/`) folder for the output of the federated learning server and clients. Say also that you can use clowdwatch 
+    - Monitor the resources on the **AWS Console**
+        - Monitor the EC2 dashboard for the instances.
+        - Monitor the AutoScaling Groups dashboard for the clients.
+        - Monitor the SNS dashboard for notifications.
 
 4. **Terminate and Cleanup**:
     - Once done, ensure you terminate the CloudFormation stack to avoid incurring any unintended costs.

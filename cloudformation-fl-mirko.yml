@@ -49,9 +49,7 @@ Parameters:
 Conditions:
   CreateScalingPolicy: !Equals [ !Ref EnableScalingPolicy, "true" ]
 
-
 Resources:
-
   FedServerEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
@@ -74,7 +72,6 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           touch IM_THE_SERVER.txt
-          
           
           # COMMON SETUP
           sudo yum -y update
@@ -146,9 +143,7 @@ Resources:
             server_ip="${FedServerEC2Instance.PrivateIp}"
 
             python3 cloudlab-fed/src/fed_client.py --ip_address $server_ip > client_output.txt
-
-            
-            
+     
   ClientsAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
@@ -172,8 +167,6 @@ Resources:
       VPCZoneIdentifier:
           - !Ref SubnetId
   
-
-
   CpuScalingPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
@@ -183,7 +176,6 @@ Resources:
         TargetValue: 50.0
         PredefinedMetricSpecification:
           PredefinedMetricType: ASGAverageCPUUtilization
-
 
   ScalingNotificationTopic:
     Type: 'AWS::SNS::Topic'
