@@ -1,6 +1,6 @@
 # CloudLab Federated Learning Project
 
-This repository contains a demonstration of a Centralized Federated Learning system using AWS CloudFormation to provision the infrastructure and Python scripts to simulate a federated learning server and multiple clients.
+This repository contains a demonstration of a Centralized Federated Learning system using AWS CloudFormation to provision the infrastructure of an Auto Scaling group and Python scripts to simulate a federated learning server and multiple clients.
 
 
 ## Table of Contents
