@@ -14,9 +14,6 @@ This repository contains a demonstration of a Centralized Federated Learning sys
 - [System Overview](#system-overview)
 - [Design choices](#design-choices)
 - [Usage](#usage)
-  - [AWS CloudFormation](#aws-cloudformation)
-  - [Running the Federated Learning Scripts](#running-the-federated-learning-scripts)
-
 
 ## Overview
 
