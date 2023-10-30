@@ -118,7 +118,7 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
         - Note: The EC2 instances, upon startup, will automatically clone this repository and run the federated learning scripts from the `/src` directory. As clients get instantiated, they'll automatically start the training process and connect to the federated learning server.
     - Identify the **`FedServer`** instance. Use your preferred SSH tool to connect to the server or client instances using the provided key pair.
     - Monitor the progress on the instances **terminal**
-        - Check `client_output.txt` and `server_output.txt` in the root (`/`) folder for the output of the federated learning server and clients. Say also that you can use clowdwatch 
+        - Check `client_output.txt` and `server_output.txt` in the root (`/`) folder for the output of the federated learning server and clients.
     - Monitor the resources on the **AWS Console**
         - Monitor the EC2 dashboard for the instances.
         - Monitor the AutoScaling Groups dashboard for the clients.
