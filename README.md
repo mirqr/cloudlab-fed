@@ -60,10 +60,9 @@ The model of choice for this task is the **MobileNetV2**, a lightweight neural n
 
 During the training cycle, each federated client uses its subset of CIFAR-10 data to train the MobileNetV2 model locally. At each `round`, the clients send their model updates to the centralized server. The server then aggregates these updates to improve the global model. This iterative process continues for several rounds, ensuring that the global model benefits from the diverse data subsets present across the clients, while ensuring data privacy by not centralizing the raw data.
 
-
 ## Architecture Diagram
 
-![AWS Architecture Diagram](./template-aws-designer.png) AGGIORNARE
+![AWS Architecture Diagram](./template-aws-designer.png)
 
 
 ## System Overview
