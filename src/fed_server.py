@@ -17,6 +17,9 @@ class ServerState:
 # Initialize the server state
 server_state = ServerState()
 
+current_round_num_clients = 0
+
+
 def fit_config(server_round: int):
     """Return training configuration dict for each round.
 
@@ -29,7 +32,7 @@ def fit_config(server_round: int):
         "local_epochs": 2,
         #"local_epochs": 2 if server_round < 2 else 5,
         "num_clients_last_round": server_state.num_clients_last_round,
-
+        "num_clients_current_round": current_round_num_clients,
     }
     return config
 
@@ -50,13 +53,22 @@ class MyFedAvg(fl.server.strategy.FedAvg):
         # Update the number of clients that successfully completed the fit round
         server_state.num_clients_last_round = len(results)
         return super().aggregate_fit(rnd, results, failures)
+
+# Custom strategy to capture the number of clients selected for the current round
+class MyStrategy(fl.server.strategy.FedAvg):
+    def configure_fit(self, server_round, parameters, client_manager):
+        global current_round_num_clients
+        print('overriding configure_fit')
+        # Get the number of available clients for the current round
+        current_round_num_clients = len(client_manager.all().values())
+        return super().configure_fit(server_round, parameters, client_manager)
     
 def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
     # Create the full server address
     server_address = ip_address+":"+port
     print("----> Server address: "+server_address, 'num_rounds: ', rounds)
 
-    strategy = MyFedAvg(
+    strategy = MyStrategy(
         # Fraction of clients used during training. In case min_fit_clients > fraction_fit * available_clients, min_fit_clients will still be sampled. Defaults to 1.0.
         fraction_fit=1, # 0.1,  
         #fraction_eval=0.1,

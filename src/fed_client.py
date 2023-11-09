@@ -81,6 +81,7 @@ class CifarClient(fl.client.NumPyClient):
         epochs: int = config["local_epochs"]
         server_round: int = config["server_round"]
         num_clients_last_round = config["num_clients_last_round"]
+        num_clients_current_round = config["num_clients_current_round"]
 
         #x_train, y_train = get_random_subset(x_train, y_train, fraction=1.0/num_clients_last_round) # take a fraction of the dataset
         # with self
@@ -99,7 +100,8 @@ class CifarClient(fl.client.NumPyClient):
 
         # print the same info on the terminal
         print('\nclient: ' + self.id + ' in round '+str(server_round)+' used ' + str(num_examples_train) + ' samples for training')
-        # print clients last round
+        # print num clients last round and current round
+        print('num_clients_last_round: ', num_clients_last_round, 'num_clients_current_round: ', num_clients_current_round)
 
 
         history = self.model.fit(
