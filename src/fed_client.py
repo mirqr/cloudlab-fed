@@ -134,7 +134,7 @@ def main():
     #(x_train, y_train), (x_test, y_test) = get_random_subset(x_train, y_train, DATA_FRACTION), (x_test, y_test)
     
     
-    n = 40   # 
+    n = 70   # 
     x_train, y_train = get_partition(x_train, y_train, i=0, num_partitions=n) # take a fraction of the dataset
     print('x_train.shape: ', x_train.shape)
 
