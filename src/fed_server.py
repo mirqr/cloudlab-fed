@@ -6,7 +6,7 @@ import logging
 import sys
 from datetime import datetime
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def fit_config(server_round: int):
@@ -49,7 +49,7 @@ def start_flower_server(ip_address, port = "8080", rounds = 3):
     )
 
     start_time = datetime.now()
-    with open('server_log.txt', 'a') as f:
+    with open('log_server.txt', 'a') as f:
         f.write('\nserver started at: ' + str(start_time))
 
     # Start Flower server
@@ -62,14 +62,14 @@ def start_flower_server(ip_address, port = "8080", rounds = 3):
     
     # write a file to indicate that the server has finished. and the time (date and time it finished)
     end_time = datetime.now()
-    with open('server_log.txt', 'a') as f:
+    with open('log_server.txt', 'a') as f:
         f.write('\nserver finished at: ' + str(end_time))
         f.write('\nserver took: ' + str(end_time - start_time))
         f.write('\n----------------------------------')
         f.write('\n\n')
 
     # print server.log
-    with open('server_log.txt', 'r') as f:
+    with open('log_server.txt', 'r') as f:
         print(f.read())
 
 # Define a function to parse command line arguments

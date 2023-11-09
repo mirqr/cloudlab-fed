@@ -15,7 +15,7 @@ from tensorflow.keras.layers import Flatten, Dense
 
 
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 # Make TensorFlow log less verbose
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -134,7 +134,7 @@ def main():
     #(x_train, y_train), (x_test, y_test) = get_random_subset(x_train, y_train, DATA_FRACTION), (x_test, y_test)
     
     
-    n = 5   # 
+    n = 40   # 
     x_train, y_train = get_partition(x_train, y_train, i=0, num_partitions=n) # take a fraction of the dataset
     print('x_train.shape: ', x_train.shape)
 
