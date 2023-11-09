@@ -6,7 +6,7 @@ import logging
 import sys
 from datetime import datetime
 
-#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def fit_config(server_round: int):
