@@ -5,9 +5,17 @@ import argparse
 import logging
 import sys
 from datetime import datetime
+from dataclasses import dataclass, field
+
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
+@dataclass
+class ServerState:
+    num_clients_last_round: int = 0
+
+# Initialize the server state
+server_state = ServerState()
 
 def fit_config(server_round: int):
     """Return training configuration dict for each round.
@@ -18,8 +26,10 @@ def fit_config(server_round: int):
     config = {
         'server_round': server_round, # send the server round to the client
         "batch_size": 8,
-        "local_epochs": 2
-        #"local_epochs": 2 if server_round < 2 else 5
+        "local_epochs": 2,
+        #"local_epochs": 2 if server_round < 2 else 5,
+        "num_clients_last_round": server_state.num_clients_last_round,
+
     }
     return config
 
@@ -32,17 +42,26 @@ def evaluate_config(server_round: int):
     val_steps = 5 if server_round < 4 else 10
     return {"val_steps": val_steps}
 
+class MyFedAvg(fl.server.strategy.FedAvg):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def aggregate_fit(self, rnd, results, failures):
+        # Update the number of clients that successfully completed the fit round
+        server_state.num_clients_last_round = len(results)
+        return super().aggregate_fit(rnd, results, failures)
+    
 def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
     # Create the full server address
     server_address = ip_address+":"+port
     print("----> Server address: "+server_address, 'num_rounds: ', rounds)
 
-    strategy = fl.server.strategy.FedAvg(
+    strategy = MyFedAvg(
         # Fraction of clients used during training. In case min_fit_clients > fraction_fit * available_clients, min_fit_clients will still be sampled. Defaults to 1.0.
         fraction_fit=1, # 0.1,  
         #fraction_eval=0.1,
-        min_fit_clients=clients,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
-        min_available_clients=clients, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
+        min_fit_clients=2,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
+        min_available_clients=2, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
         #eval_fn=None,
         on_fit_config_fn=fit_config,
         on_evaluate_config_fn=evaluate_config,
@@ -53,6 +72,7 @@ def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
     with open('log_server.txt', 'a') as f:
         f.write('\nserver started at: ' + str(start_time))
 
+    server_state.num_clients_last_round = clients
     # Start Flower server
     fl.server.start_server(
         server_address=server_address,
