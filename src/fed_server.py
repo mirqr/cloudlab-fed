@@ -16,7 +16,8 @@ def fit_config(server_round: int):
     local epoch, increase to two local epochs afterwards.
     """
     config = {
-        "batch_size": 4,
+        'server_round': server_round, # send the server round to the client
+        "batch_size": 8,
         "local_epochs": 2
         #"local_epochs": 2 if server_round < 2 else 5
     }
@@ -31,7 +32,7 @@ def evaluate_config(server_round: int):
     val_steps = 5 if server_round < 4 else 10
     return {"val_steps": val_steps}
 
-def start_flower_server(ip_address, port = "8080", rounds = 3):
+def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
     # Create the full server address
     server_address = ip_address+":"+port
     print("----> Server address: "+server_address, 'num_rounds: ', rounds)
@@ -40,8 +41,8 @@ def start_flower_server(ip_address, port = "8080", rounds = 3):
         # Fraction of clients used during training. In case min_fit_clients > fraction_fit * available_clients, min_fit_clients will still be sampled. Defaults to 1.0.
         fraction_fit=1, # 0.1,  
         #fraction_eval=0.1,
-        min_fit_clients=2,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
-        min_available_clients=2, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
+        min_fit_clients=clients,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
+        min_available_clients=clients, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
         #eval_fn=None,
         on_fit_config_fn=fit_config,
         on_evaluate_config_fn=evaluate_config,
@@ -77,6 +78,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Flower Server")
     parser.add_argument('--ip_address', type=str, default="0.0.0.0", help='IP address of the server.')
     parser.add_argument('--rounds', type=int, default=3, help='Number of rounds to train.')
+    # number of clients
+    parser.add_argument('--clients', type=int, default=2, help='Number of clients.')
     return parser.parse_args()
 
 
@@ -88,9 +91,10 @@ def main():
 
     ip = args.ip_address
     rnds = args.rounds
+    clients = args.clients # default 2
     
     # Start the server
-    start_flower_server(ip_address = ip, rounds=rnds)
+    start_flower_server(ip_address = ip, rounds=rnds, clients=clients)
 
 if __name__ == "__main__":
     print("STARTTT SERVERRRR")

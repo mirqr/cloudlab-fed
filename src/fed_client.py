@@ -1,5 +1,8 @@
 import os
 import sys
+import random
+import string
+import datetime
 
 import argparse
 
@@ -53,6 +56,10 @@ class CifarClient(fl.client.NumPyClient):
         self.model = model
         self.x_train, self.y_train = x_train, y_train
         self.x_test, self.y_test = x_test, y_test
+
+        # generate a random id for the client using datetime and random # use some dashes in the date
+        now = datetime.datetime.now() 
+        self.id = now.strftime("%Y-%m-%d_%H-%M-%S") + '_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
     
 
     def get_properties(self, config):
@@ -66,10 +73,12 @@ class CifarClient(fl.client.NumPyClient):
 
 
     def fit(self, parameters, config):
+        
         self.model.set_weights(parameters)
 
         batch_size: int = config["batch_size"]
         epochs: int = config["local_epochs"]
+        server_round: int = config["server_round"]
 
         history = self.model.fit(
             self.x_train,
@@ -82,6 +91,21 @@ class CifarClient(fl.client.NumPyClient):
         # Return updated model parameters and results
         parameters_prime = self.model.get_weights()
         num_examples_train = len(self.x_train)
+
+        # write on file (with id client) how many examples were used for training
+        #with open('log_client_'+self.id+'.txt', 'a') as f:
+            #f.write('\nclient: ' + self.id + ' in round '+str(server_round)+' used ' + str(num_examples_train) + ' samples for training')
+            #f.write('\nclient: ' + self.id + ' used ' + str(batch_size) + ' batch size')
+            #f.write('\nclient: ' + self.id + ' used ' + str(epochs) + ' epochs')
+            #f.write('\nclient: ' + self.id + ' used ' + str(config) + ' config')
+            #f.write('\nclient: ' + self.id + ' used ' + str(history.history) + ' history')
+            #f.write('\n----------------------------------')
+            #f.write('\n\n')
+
+        # print the same info on the terminal
+        print('\nclient: ' + self.id + ' in round '+str(server_round)+' used ' + str(num_examples_train) + ' samples for training')
+
+
         results = {
             "loss": history.history["loss"][0],
             "accuracy": history.history["accuracy"][0],
@@ -123,6 +147,7 @@ def main():
     # model and data
     #model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
     #model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
+    
     # a model for mnist
     model = tf.keras.Sequential([
         tf.keras.layers.Flatten(input_shape=(28, 28)),
@@ -130,17 +155,32 @@ def main():
         tf.keras.layers.Dense(10, activation='softmax')
     ])
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    
+    # a convolutional model for fashion mnist
+    model = tf.keras.Sequential([
+        tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+        tf.keras.layers.MaxPooling2D((2, 2)),
+        tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+        tf.keras.layers.MaxPooling2D((2, 2)),
+        tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])        
+    
 
     #(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data(); 
-    (x_train, y_train), (x_test, y_test) = mnist.load_data();
+    (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
     x_train = x_train / 255.0; x_test = x_test / 255.0
     
     #DATA_FRACTION=0.1
     #(x_train, y_train), (x_test, y_test) = get_random_subset(x_train, y_train, DATA_FRACTION), (x_test, y_test)
     
     
-    n = 70   # 
-    x_train, y_train = get_partition(x_train, y_train, i=0, num_partitions=n) # take a fraction of the dataset
+    n = 10   # 
+    #x_train, y_train = get_partition(x_train, y_train, i=0, num_partitions=n) # take a fraction of the dataset
+    x_train, y_train = get_random_subset(x_train, y_train, fraction=1.0/n) # take a fraction of the dataset
     print('x_train.shape: ', x_train.shape)
 
     # Start Flower client
