@@ -64,7 +64,7 @@ class CifarClient(fl.client.NumPyClient):
         return self.model.get_weights()
 
 
-    
+
     def fit(self, parameters, config):
         self.model.set_weights(parameters)
 
@@ -121,11 +121,19 @@ def main():
     
 
     # model and data
-    model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
-    model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
-    
+    #model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
+    #model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
+    # a model for mnist
+    model = tf.keras.Sequential([
+        tf.keras.layers.Flatten(input_shape=(28, 28)),
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data(); x_train = x_train / 255.0; x_test = x_test / 255.0
+    #(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data(); 
+    (x_train, y_train), (x_test, y_test) = mnist.load_data();
+    x_train = x_train / 255.0; x_test = x_test / 255.0
     
     #DATA_FRACTION=0.1
     #(x_train, y_train), (x_test, y_test) = get_random_subset(x_train, y_train, DATA_FRACTION), (x_test, y_test)
