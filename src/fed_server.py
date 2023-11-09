@@ -17,7 +17,7 @@ def fit_config(server_round: int):
     """
     config = {
         "batch_size": 8,
-        "local_epochs": 2
+        "local_epochs": 1
         #"local_epochs": 2 if server_round < 2 else 5
     }
     return config

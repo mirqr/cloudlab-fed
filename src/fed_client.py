@@ -5,6 +5,7 @@ import argparse
 
 import logging
 
+
 import flwr as fl
 import tensorflow as tf
 import numpy as np
@@ -126,9 +127,14 @@ def main():
     model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
     model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
     
-    DATA_FRACTION=0.1
-    (x_train, y_train), (x_test, y_test) = load_partition(fraction=DATA_FRACTION)
-    n = 5
+
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data(); x_train = x_train / 255.0; x_test = x_test / 255.0
+    
+    #DATA_FRACTION=0.1
+    #(x_train, y_train), (x_test, y_test) = get_random_subset(x_train, y_train, DATA_FRACTION), (x_test, y_test)
+    
+    
+    n = 5   # 
     x_train, y_train = get_partition(x_train, y_train, i=0, num_partitions=n) # take a fraction of the dataset
     print('x_train.shape: ', x_train.shape)
 
@@ -153,16 +159,7 @@ def get_partition(x, y, i, num_partitions):
     end = start + size
     return x[start:end], y[start:end]
 
-def load_partition(fraction=0.1):
-    # Load the MNIST dataset
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data(); x_train = x_train / 255.0; x_test = x_test / 255.0
 
-    # normalize 
-    x_train, x_test = x_train / 255.0, x_test / 255.0
-    #x_train_client, y_train_client = x_train, y_train # use all the dataset
-    x_train_client, y_train_client = get_random_subset(x_train, y_train, fraction=fraction) # take a fraction of the dataset
-
-    return (x_train_client, y_train_client), (x_test, y_test)
 
 
 
