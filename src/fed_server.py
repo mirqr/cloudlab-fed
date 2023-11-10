@@ -27,7 +27,7 @@ def fit_config(server_round: int):
     if server_round == 1:
         start_time = datetime.now()
         with open('log_server.txt', 'a') as f:
-            f.write('\nserver started at: ' + str(start_time))
+            f.write('\n start (first round): ' + str(start_time))
     config = {
         'server_round': server_round, # send the server round to the client
         "batch_size": 8,
@@ -96,8 +96,8 @@ def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
         # Fraction of clients used during training. In case min_fit_clients > fraction_fit * available_clients, min_fit_clients will still be sampled. Defaults to 1.0.
         fraction_fit=1, # 0.1,  
         #fraction_eval=0.1,
-        min_fit_clients=clients,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
-        min_available_clients=clients, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
+        min_fit_clients=2,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
+        min_available_clients=2, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
         #eval_fn=None,
         on_fit_config_fn=fit_config,
         on_evaluate_config_fn=evaluate_config,
