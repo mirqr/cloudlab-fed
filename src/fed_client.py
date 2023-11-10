@@ -85,7 +85,7 @@ class CifarClient(fl.client.NumPyClient):
 
         #x_train, y_train = get_random_subset(x_train, y_train, fraction=1.0/num_clients_last_round) # take a fraction of the dataset
         # with self
-        x_train, y_train = get_random_subset(self.x_train, self.y_train, fraction=1.0/num_clients_last_round) # take a fraction of the dataset
+        x_train, y_train = get_random_subset(self.x_train, self.y_train, fraction=1.0/num_clients_current_round) # take a fraction of the dataset
         
         num_examples_train = len(x_train)
         # write on file (with id client) how many examples were used for training

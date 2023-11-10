@@ -1,3 +1,4 @@
+from typing import Dict, List, Optional, Tuple, Union
 import flwr as fl
 import argparse
 
@@ -5,20 +6,16 @@ import argparse
 import logging
 import sys
 from datetime import datetime
-from dataclasses import dataclass, field
+
+from flwr.common import FitRes, Parameters, Scalar, FitIns
+from flwr.server.client_proxy import ClientProxy
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-@dataclass
-class ServerState:
-    num_clients_last_round: int = 0
 
-# Initialize the server state
-server_state = ServerState()
-
-current_round_num_clients = 0
-
+num_clients_last_round = 0
+start_time = None
 
 def fit_config(server_round: int):
     """Return training configuration dict for each round.
@@ -26,13 +23,17 @@ def fit_config(server_round: int):
     Keep batch size fixed at 32, perform two rounds of training with one
     local epoch, increase to two local epochs afterwards.
     """
+    global start_time
+    if server_round == 1:
+        start_time = datetime.now()
+        with open('log_server.txt', 'a') as f:
+            f.write('\nserver started at: ' + str(start_time))
     config = {
         'server_round': server_round, # send the server round to the client
         "batch_size": 8,
         "local_epochs": 2,
         #"local_epochs": 2 if server_round < 2 else 5,
-        "num_clients_last_round": server_state.num_clients_last_round,
-        "num_clients_current_round": current_round_num_clients,
+        "num_clients_last_round": num_clients_last_round,
     }
     return config
 
@@ -45,23 +46,46 @@ def evaluate_config(server_round: int):
     val_steps = 5 if server_round < 4 else 10
     return {"val_steps": val_steps}
 
-class MyFedAvg(fl.server.strategy.FedAvg):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
-    def aggregate_fit(self, rnd, results, failures):
-        # Update the number of clients that successfully completed the fit round
-        server_state.num_clients_last_round = len(results)
-        return super().aggregate_fit(rnd, results, failures)
 
 # Custom strategy to capture the number of clients selected for the current round
 class MyStrategy(fl.server.strategy.FedAvg):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def configure_fit(self, server_round, parameters, client_manager):
-        global current_round_num_clients
-        print('overriding configure_fit')
-        # Get the number of available clients for the current round
-        current_round_num_clients = len(client_manager.all().values())
-        return super().configure_fit(server_round, parameters, client_manager)
+        """Configure the next round of training."""
+        config = {}
+        if self.on_fit_config_fn is not None:
+            # Custom fit config function provided
+            config = self.on_fit_config_fn(server_round)
+        fit_ins = FitIns(parameters, config)
+
+        # Sample clients
+        sample_size, min_num_clients = self.num_fit_clients(
+            client_manager.num_available()
+        )
+        clients = client_manager.sample(
+            num_clients=sample_size, min_num_clients=min_num_clients
+        )
+        
+        # add information about the number of clients selected for the current round in the config
+
+        config['num_clients_current_round'] = len(clients)
+        #print ('--------fffff----clients selected', len(clients))
+        #print ('--------fffff----clients available', len(client_manager.all().values()))
+        # Return client/config pairs
+        return [(client, fit_ins) for client in clients]
+
+
+        
+    
+    def aggregate_fit(self, rnd, results, failures):
+        # Update the number of clients that successfully completed the fit round
+        print('overriding aggregate_fit')
+        global num_clients_last_round
+        num_clients_last_round = len(results)
+        return super().aggregate_fit(rnd, results, failures)
     
 def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
     # Create the full server address
@@ -72,19 +96,16 @@ def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
         # Fraction of clients used during training. In case min_fit_clients > fraction_fit * available_clients, min_fit_clients will still be sampled. Defaults to 1.0.
         fraction_fit=1, # 0.1,  
         #fraction_eval=0.1,
-        min_fit_clients=2,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
-        min_available_clients=2, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
+        min_fit_clients=clients,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
+        min_available_clients=clients, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
         #eval_fn=None,
         on_fit_config_fn=fit_config,
         on_evaluate_config_fn=evaluate_config,
         #initial_parameters=None,
     )
 
-    start_time = datetime.now()
-    with open('log_server.txt', 'a') as f:
-        f.write('\nserver started at: ' + str(start_time))
 
-    server_state.num_clients_last_round = clients
+    
     # Start Flower server
     fl.server.start_server(
         server_address=server_address,
