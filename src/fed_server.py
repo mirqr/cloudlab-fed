@@ -72,6 +72,9 @@ class MyStrategy(fl.server.strategy.FedAvg):
         # add information about the number of clients selected for the current round in the config
 
         config['num_clients_current_round'] = len(clients)
+        # write on file (with id client) how many clients were selected for the current round
+        with open('log_server.txt', 'a') as f:
+            f.write('\nserver_round: ' + str(server_round) + ' used ' + str(len(clients)) + ' clients for training')
         #print ('--------fffff----clients selected', len(clients))
         #print ('--------fffff----clients available', len(client_manager.all().values()))
         # Return client/config pairs
