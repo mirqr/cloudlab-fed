@@ -60,7 +60,7 @@ The model architecture for this task is a **custom convolutional neural network*
 
 - A sequence of convolutional layers for feature extraction, followed by max pooling layers.
 - A flattening layer to convert the 2D output to a 1D array.
-- Dense layers, including a final output layer with softmax activation for classification.ces.
+- Dense layers, including a final output layer with softmax activation for classification.
 
 This model is well-suited for the Fashion-MNIST dataset and provides a robust framework for demonstrating federated learning with complex image data.
 
@@ -141,6 +141,8 @@ During the training cycle, each federated client uses its subset of fashion-mins
 
     ```
 
+    - *Note: To speed up the creation of the CloudFormation stack, you may opt to comment out the IAM component of the stack temporarily (and detach it from the server). This can significantly reduce the time taken to set up the stack. However, please note that doing so will limit the functionality related to AWS S3 interactions, as these require the specific IAM roles and policies for secure and effective operation.*
+
 3. **Monitor the Federated Learning Server**:
     - Once the CloudFormation stack is successfully deployed, navigate to the EC2 dashboard.
         - Note: The EC2 instances, upon startup, will automatically clone this repository and run the federated learning scripts from the `/src` directory. As clients get instantiated, they'll automatically start the training process and connect to the federated learning server.
@@ -161,7 +163,7 @@ During the training cycle, each federated client uses its subset of fashion-mins
 
     ```bash
     aws cloudformation delete-stack --stack-name FedStack
-    ``` 
+    ```
 
 ## Experimental Results
 
