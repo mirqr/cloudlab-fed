@@ -57,46 +57,51 @@ Resources:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       #ImageId: ami-09988af04120b3591 # Amazon Linux 2 AMI (HVM), SSD Volume Type
-      ImageId: ami-030c79dfe54c09450 # Amazon Linux 2 fatta da me con tutto installato (per velocizzare tempi di avvio)
+      ImageId: ami-030c79dfe54c09450 # Amazon Linux 2 custom image with all installed (to speed up boot time)
       IamInstanceProfile: !Ref MyInstanceProfile
       Tags: 
-        -
-          Key: Name
-          Value: FedServer 
+        - Key: Name
+          Value: !Sub 
+            - "FedServer-${ClientCount}"
+            - ClientCount: !Ref ClientCount
       NetworkInterfaces:
         - AssociatePublicIpAddress: 'true'
           DeviceIndex: '0'
           GroupSet: 
             - !Ref InstanceSecurityGroup
           SubnetId: !Ref SubnetId
-          #PrivateIpAddress: 172.31.88.9 # fissiamolo per comodita. 
+          #PrivateIpAddress: 172.31.88.9 # fixed ip address
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
           touch IM_THE_SERVER.txt
           
-          # COMMON SETUP
+          # COMMON SETUP (packages installation commented since it is already done in the custom image)
           #sudo yum -y update
           #sudo yum update -y aws-cfn-bootstrap
           #sudo yum update -y aws-cli
           #sudo yum install -y python3 python3-pip git htop
-          # sudo amazon-linux-extras install python3.8
+          
 
-          python3 -m pip install -U pip setuptools wheel 
-          python3 -m pip install tensorflow-cpu
-          python3 -m pip install flwr
+          #python3 -m pip install -U pip setuptools wheel 
+          #python3 -m pip install tensorflow-cpu
+          #python3 -m pip install flwr
           git clone https://github.com/mirqr/cloudlab-fed.git
           # COMMON SETUP END
 
           local_ip_server=$(ec2-metadata --local-ipv4  | cut -d " " -f 2)
-          python3 cloudlab-fed/src/fed_server.py --ip_address $local_ip_server --rounds ${TrainingRounds} > server_output.txt
-          aws s3 cp server_output.txt s3://${Bucket}/server_output.txt         
+          python3 cloudlab-fed/src/fed_server.py --ip_address $local_ip_server --rounds ${TrainingRounds} --clients ${ClientCount} > server_output.txt
+
+          #aws s3 cp server_output.txt s3://${Bucket}/server_output.txt
+          
+          # write log to s3
+          aws s3 cp log_server.txt s3://${Bucket}/log_server_${ClientCount}.txt 
 
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable SSH access and all outbound traffic
-      SecurityGroupIngress: # non solo port 22 for SSH, tutte le porte (flower usa 8080 in genere- basterebbe solo su server ma la mettiamo a tutti)
+      SecurityGroupIngress: # open all ports for all ip addresses. Better to restrict 
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 65535 
@@ -113,11 +118,12 @@ Resources:
     Type: 'AWS::EC2::LaunchTemplate'
     Properties:
       LaunchTemplateData: 
+        #IamInstanceProfile: # if you want to use the same instance profile as the server (enable s3 write)
+          #Arn: !GetAtt MyInstanceProfile.Arn 
         InstanceType: !Ref InstanceType
         KeyName: !Ref KeyName
         #ImageId: ami-09988af04120b3591 # Amazon Linux 2 AMI (HVM), SSD Volume Type
-        ImageId: ami-030c79dfe54c09450 # Amazon Linux 2 fatta da me con tutto installato (per velocizzare tempi di avvio)
-        IamInstanceProfile: !Ref MyInstanceProfile
+        ImageId: ami-030c79dfe54c09450 # Amazon Linux 2 custom image with all installed (to speed up boot time)
         SecurityGroupIds: 
           - !Ref InstanceSecurityGroup
         UserData:
@@ -125,29 +131,28 @@ Resources:
             #!/bin/bash
             touch IM_A_CLIENT.txt
 
-            # COMMON SETUP
+            # COMMON SETUP (packages installation commented since it is already done in the custom image)
             #sudo yum -y update
             #sudo yum update -y aws-cfn-bootstrap
             #sudo yum update -y aws-cli
             #sudo yum install -y python3 python3-pip git htop
-            # sudo amazon-linux-extras install python3.8 
+            
 
-            python3 -m pip install -U pip setuptools wheel 
-            python3 -m pip install tensorflow-cpu
-            python3 -m pip install flwr
+            #python3 -m pip install -U pip setuptools wheel 
+            #python3 -m pip install tensorflow-cpu
+            #python3 -m pip install flwr
             git clone https://github.com/mirqr/cloudlab-fed.git
             # COMMON SETUP END
             
             #aws s3 cp s3://${Bucket}/my_script.py my-my_script.py # check if my-bucket to variabile
             
 
-            
             id_client=$(ec2-metadata -i  | cut -d " " -f 2) # take instance id
             echo "${FedServerEC2Instance.PrivateIp}" > server_ip # Server viene creato prima. Sarebbe ancora meglio usare DNS
             server_ip="${FedServerEC2Instance.PrivateIp}"
 
-            python3 cloudlab-fed/src/fed_client.py --ip_address $server_ip > client_output_${id_client}.txt
-            aws s3 cp client_output_${id_client}.txt s3://${Bucket}/client_output_${id_client}.txt
+            python3 cloudlab-fed/src/fed_client.py --ip_address $server_ip > client_output_$id_client.txt
+            #aws s3 cp client_output_$id_client.txt s3://${Bucket}/client_output_$id_client.txt
      
   ClientsAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
@@ -174,6 +179,7 @@ Resources:
   
   CpuScalingPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
+    Condition: CreateScalingPolicy  # Apply the condition
     Properties:
       AutoScalingGroupName: !Ref ClientsAutoScalingGroup # agganciato al gruppo di auto scaling (i client)
       PolicyType: TargetTrackingScaling
@@ -199,15 +205,14 @@ Resources:
       TopicArn: !Ref ScalingNotificationTopic 
 
 
-  # per dare permessi a EC2 di accedere a S3
   MyInstanceProfile: # is the instance profile that the ec2 instance will use
-    Type: "AWS::IAM::InstanceProfile"
+    Type: 'AWS::IAM::InstanceProfile'
     Properties: 
       Roles: 
         - !Ref S3WritableRole
     
   S3WritableRole: # is the AIM role that the ec2 instance will assume
-    Type: "AWS::IAM::Role"
+    Type: 'AWS::IAM::Role'
     Properties: 
       AssumeRolePolicyDocument: 
         Version: "2012-10-17"
@@ -221,14 +226,14 @@ Resources:
       Path: "/"
 
   MyPolicy: # is the IAM policy that grants the EC2 instance the necessary permissions to put objects into the S3 bucket.
-    Type: "AWS::IAM::Policy"
+    Type: 'AWS::IAM::Policy'
     Properties: 
       PolicyName: "FL-S3Policy"
       PolicyDocument: 
         Version: "2012-10-17"
         Statement: 
           - Effect: "Allow"
-            Action: "s3:*" # "s3:PutObject" and "s3:GetObject" etc if you want to restrict the permissions
-            Resource: "*"  # "arn:aws:s3:::${Bucket}/*" if you want to restrict the permissions
+            Action: "s3:*" # "s3:PutObject" and "s3:GetObject" etc to restrict the permissions
+            Resource: "*"  # "arn:aws:s3:::${Bucket}/*"  to restrict the permissions
       Roles: 
         - !Ref S3WritableRole

@@ -2,12 +2,15 @@
 
 
 ip="127.0.0.1"
+rounds=3
+clients=5
 
 echo "Starting server"
-python fed_server.py --ip_address $ip &
-sleep 3  # Sleep for 3s to give the server enough time to start
+python fed_server.py --ip_address $ip --rounds $rounds --clients $clients  &
+sleep 5  # Sleep for 3s to give the server enough time to start
 
-for i in `seq 0 4`; do
+# for in clients
+for i in `seq 0 $((clients-1))`; do
     echo "Starting client $i"
     python fed_client.py --ip_address $ip &
 done
