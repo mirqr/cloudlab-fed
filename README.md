@@ -105,7 +105,7 @@ During the training cycle, each federated client uses its subset of fashion-mins
 0. **Testing the Federated Learning Script Locally**:
     - Before deploying the CloudFormation stack, you can test the federated learning script locally.
     - Navigate to the `src/` directory in your local clone of the repository.
-    - Ensure that you have Python>=3.7 installed on your machine along with the TensorFlow and Flower (flwr) packages. These are necessary to run the federated learning scripts. Reference version of the packages used in this project are TensorFlow==2.14.0, flwr==1.15
+    - Ensure that you have Python>=3.7 installed on your machine along with the TensorFlow and Flower (flwr) packages. These are necessary to run the federated learning scripts. Reference version of the packages used in this project are `TensorFlow==2.14.0`, `flwr==1.15`
     - You can install TensorFlow and Flower using pip:
 
     ```bash
@@ -134,7 +134,7 @@ During the training cycle, each federated client uses its subset of fashion-mins
     ```
 
     - Ensure you have the AWS CLI installed and configured with your AWS credentials and a key pair available in your AWS account.
-    - Run the following command to deploy the CloudFormation stack. Note that the --capabilities CAPABILITY_NAMED_IAM flag is mandatory when your template contains IAM resources with custom names. (Please check optional optional parameters that and can be omitted)
+    - Run the following command to deploy the CloudFormation stack. Note that the `--capabilities CAPABILITY_NAMED_IAM` flag is mandatory when your template contains IAM resources with custom names. (Please check optional optional parameters that and can be omitted)
 
     ```bash
     aws cloudformation create-stack --stack-name FedStack --template-body file://cloudformation-fl-mirko.yml --capabilities CAPABILITY_NAMED_IAM --parameters ParameterKey=ClientCount,ParameterValue='4' ParameterKey=OperatorEMail,ParameterValue='YOUR_EMAIL' ParameterKey=KeyName,ParameterValue=YOUR_KEY_PAIR_NAME ParameterKey=EnableScalingPolicy,ParameterValue='true' 
