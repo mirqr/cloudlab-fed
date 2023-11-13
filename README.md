@@ -54,11 +54,17 @@ Federated Learning is a machine learning approach where a model is trained acros
 
 ### Task
 
-For demonstration purposes, the federated learning setup utilizes a classification task based on the **CIFAR-10 dataset** The dataset gets randomly split across the federated clients, and each client trains locally on its subset of data.
+For demonstration purposes, the federated learning setup utilizes the **Fashion-MNIST** dataset, a collection of 70,000 grayscale images of 10 different fashion items. Each client in the federated network trains a custom convolutional neural network on its local subset of the Fashion-MNIST data.
 
-The model of choice for this task is the **MobileNetV2**, a lightweight neural network architecture optimized for speed and performance, especially on mobile and embedded devices. Its design makes it apt for federated learning scenarios where computational resources might be limited on client devices.
+The model architecture for this task is a **custom convolutional neural network** consisting of:
 
-During the training cycle, each federated client uses its subset of CIFAR-10 data to train the MobileNetV2 model locally. At each `round`, the clients send their model updates to the centralized server. The server then aggregates these updates to improve the global model. This iterative process continues for several rounds, ensuring that the global model benefits from the diverse data subsets present across the clients, while ensuring data privacy by not centralizing the raw data.
+- A sequence of convolutional layers for feature extraction, followed by max pooling layers.
+- A flattening layer to convert the 2D output to a 1D array.
+- Dense layers, including a final output layer with softmax activation for classification.ces.
+
+This model is well-suited for the Fashion-MNIST dataset and provides a robust framework for demonstrating federated learning with complex image data.
+
+During the training cycle, each federated client uses its subset of fashion-minst data to train the model locally. At each `round`, the clients send their model updates to the centralized server. The server then aggregates these updates to improve the global model. This iterative process continues for several rounds, ensuring that the global model benefits from the diverse data subsets present across the clients, while ensuring data privacy by not centralizing the raw data.
 
 ## Architecture Diagram
 
@@ -78,6 +84,9 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
     - **CpuScalingPolicy**: An optional scaling policy that scales the number of clients based on their average CPU utilization.
     - **ScalingNotificationTopic**: An SNS topic that notifies the specified email when there are scaling operations, like launching or terminating EC2 instances.
     - **EmailSubscription**: A subscription to the SNS topic so that notifications are sent to the specified email address.
+    - **MyInstanceProfile**: Instance profile used by the EC2 instance, associated with the S3WritableRole.
+    - **S3WritableRole**: IAM role assumed by the EC2 instance, allowing interactions with S3.  
+    - **MyPolicy**: IAM policy granting the EC2 instance permissions to put objects into the S3 bucket.
 
 ## Design choices
 
@@ -89,9 +98,27 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
 4. **Custom EC2 Instance Images**: A custom AMI (ami-030c79dfe54c09450), derived from the standard Amazon Linux 2 AMI (HVM) with an SSD Volume Type, has been crafted and published with preloaded packages. This drastically reduces boot time for instances.
 5. **Dependencies**: The **`ClientsAutoScalingGroup`** depends on the **`FedServerEC2Instance`**. This ensures the server is up and running before any clients are launched.
 6. **Email Notifications**: The system is set to send email notifications for various scaling events.
-7. **S3 Bucket Interactions**: Initially, the idea was to deploy federated learning scripts to EC2 instances using Amazon S3. However, this approach was set aside due to cost concerns related to data transfers on a free-tier AWS account and to avoid setting up specific IAM permissions for EC2-S3 interaction. Commented lines referencing S3 in the code remain as a hint to this initial consideration and for future development.
+7. **S3 Bucket Interactions**: The components MyInstanceProfile, S3WritableRole, and MyPolicy ensures secure and controlled access to S3 services. These components allow the EC2 instances to interact with S3 buckets for storing and retrieving federated learning results.
 
 ## Usage
+
+0. **Testing the Federated Learning Script Locally**:
+    - Before deploying the CloudFormation stack, you can test the federated learning script locally.
+    - Navigate to the `src/` directory in your local clone of the repository.
+    - Ensure that you have Python>=3.7 installed on your machine along with the TensorFlow and Flower (flwr) packages. These are necessary to run the federated learning scripts. Reference version of the packages used in this project are TensorFlow==2.14.0, flwr==1.15
+    - You can install TensorFlow and Flower using pip:
+
+    ```bash
+    pip install tensorflow flwr
+    ```
+
+    - Run the `run_local.sh` script to simulate the federated learning process on your local machine.
+
+    ```bash
+    ./run_local.sh
+    ```
+
+    - This script will start a local federated learning server and multiple client instances to simulate the federated learning process. It's a good way to ensure everything is set up correctly before deploying to AWS.
 
 1. **Deploy the AWS CloudFormation Stack via AWS Console**:
     - Navigate to the AWS CloudFormation console.
@@ -107,10 +134,11 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
     ```
 
     - Ensure you have the AWS CLI installed and configured with your AWS credentials and a key pair available in your AWS account.
-    - Run the following command to deploy the CloudFormation stack.
+    - Run the following command to deploy the CloudFormation stack. Note that the --capabilities CAPABILITY_NAMED_IAM flag is mandatory when your template contains IAM resources with custom names. (Please check optional optional parameters that and can be omitted)
 
     ```bash
-    aws cloudformation create-stack --stack-name FedStack --template-body file://cloudformation-fl-mirko.yml --parameters ParameterKey=ClientCount,ParameterValue='4' ParameterKey=OperatorEMail,ParameterValue='YOUR_EMAIL' --parameters ParameterKey=KeyName,ParameterValue=YOUR_KEY_PAIR_NAME
+    aws cloudformation create-stack --stack-name FedStack --template-body file://cloudformation-fl-mirko.yml --capabilities CAPABILITY_NAMED_IAM --parameters ParameterKey=ClientCount,ParameterValue='4' ParameterKey=OperatorEMail,ParameterValue='YOUR_EMAIL' ParameterKey=KeyName,ParameterValue=YOUR_KEY_PAIR_NAME ParameterKey=EnableScalingPolicy,ParameterValue='true' 
+
     ```
 
 3. **Monitor the Federated Learning Server**:
@@ -123,6 +151,8 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
         - Monitor the EC2 dashboard for the instances.
         - Monitor the AutoScaling Groups dashboard for the clients.
         - Monitor the SNS dashboard for notifications.
+    - Monitor the server log on the **S3 bucket**
+        - It will be uploaded to the specified S3 bucket at the end of the whole process.
 
 4. **Terminate and Cleanup**:
     - Once done, ensure you terminate the CloudFormation stack to avoid incurring any unintended costs.
@@ -132,3 +162,36 @@ During the training cycle, each federated client uses its subset of CIFAR-10 dat
     ```bash
     aws cloudformation delete-stack --stack-name FedStack
     ``` 
+
+## Experimental Results
+
+The federated learning system underwent rigorous testing to evaluate its performance under different client counts and operational conditions. The objective was to assess the impact of varying client numbers on training duration and system scalability.
+
+### Test Conditions and Observations
+
+- **Static Tests**: Conducted over 3 training rounds with a fixed number of clients (ranging from 2 to 20).
+- **Dynamic Test**: Conducted over 10 rounds, starting from two devices. This configuration was necessary to trigger the auto-scaling function, which monitors the load at 300-second intervals by default.
+- **Data Distribution**: The larger the number of clients in a round, the smaller the dataset each client needed to train in local fit. This approach optimizes data usage and enhances training efficiency.
+
+### Test Results
+
+| Test Start Time       | Number of Clients per Round | Server Finish Time   | Total Duration (min) |
+|-----------------------|-----------------------------|----------------------|----------------|
+| 2023-11-10 15:04:13   | 2 (Static)                  | 2023-11-10 15:16:36  | 0:12:23        |
+| 2023-11-10 12:47:22   | 3 (Static)                  | 2023-11-10 12:57:14  | 0:09:51        |
+| 2023-11-10 11:53:44   | 5 (Static)                  | 2023-11-10 12:00:23  | 0:06:38        |
+| 2023-11-10 12:09:07   | 8 (Static)                  | 2023-11-10 12:13:14  | 0:04:06        |
+| 2023-11-10 12:18:36   | 10 (Static)                 | 2023-11-10 12:22:18  | 0:03:41        |
+| 2023-11-10 12:26:12   | 15 (Static)                 | 2023-11-10 12:29:34  | 0:03:21        |
+| 2023-11-10 12:36:45   | 20 (Static)                 | 2023-11-10 12:40:15  | 0:03:29        |
+| 2023-11-10 13:10:11   | 2-3 (Dynamic)               | 2023-11-10 13:50:12  | 0:40:01        |
+
+*Note: The static tests were conducted over 3 rounds, while the dynamic test varied across 10 rounds, starting with two clients to activate the auto-scaling function.*
+
+It's important to note that performance on AWS's free-tier can be inconsistent. System limitations, such as reduced speed of virtual machines or network constraints, can be trigghered by AWS to ensure fair usage of free-tier resources. This can affect the training process and lead to performance variability.
+
+### Observations and Insights
+
+Given that t2.small machines with a single core were used, this test scenario can be viewed as a parallelization of the training task. This setup provides insights into how federated learning can leverage parallel computing to enhance efficiency.
+
+These findings highlight the system's scalability and adaptability to varying client numbers. The results also underscore the parallelization potential of federated learning, especially when leveraging cloud resources. 
