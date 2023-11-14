@@ -125,7 +125,7 @@ class MyStrategy(fl.server.strategy.FedAvg):
         num_clients_last_round = len(results)
         return super().aggregate_fit(rnd, results, failures)
     
-def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
+def start_flower_server(ip_address, port = "8089", rounds = 3, clients = 2):
     # Create the full server address
     server_address = ip_address+":"+port
     print("----> Server address: "+server_address, 'num_rounds: ', rounds)

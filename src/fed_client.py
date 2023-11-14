@@ -20,20 +20,26 @@ from tensorflow.keras.layers import Flatten, Dense
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+# Make TensorFlow log less verbose
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+# gpu growth
+os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
+# disable gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 
 
 class CifarClient(fl.client.NumPyClient):
-    def __init__(self, model, x_train, y_train, x_test, y_test):
+    def __init__(self, model, x_train, y_train, x_test, y_test, id=0):
         self.model = model
         self.x_train, self.y_train = x_train, y_train
         self.x_test, self.y_test = x_test, y_test
 
         
         now = datetime.datetime.now() 
-        self.id = now.strftime("%Y-%m-%d_%H-%M-%S") + '_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
-    
+        self.id_name = now.strftime("%Y-%m-%d_%H-%M-%S") + '_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        self.id = id
 
     def get_properties(self, config):
         """Get properties of client."""
@@ -53,19 +59,22 @@ class CifarClient(fl.client.NumPyClient):
         server_round: int = config["server_round"]
         num_clients_last_round = config["num_clients_last_round"]
         num_clients_current_round = config["num_clients_current_round"]
-
-        # client have all the data, select a fraction of it
-        x_train, y_train = get_random_subset(self.x_train, self.y_train, fraction=1.0/num_clients_current_round) # take a fraction of the dataset
         
+        # client have all the data, select a fraction of it
+        #x_train, y_train = get_random_subset(self.x_train, self.y_train, fraction=1.0/num_clients_current_round) # take a fraction of the dataset
+        
+        # NEVER use on aws (cannot assign increment id to clients). use get_random_subset 
+        x_train, y_train = get_partition(self.x_train, self.y_train, i=self.id, num_partitions=num_clients_current_round) # take the i-th partition of the dataset given the number of partitions
+
         num_examples_train = len(x_train)
-        # write on file (with id client) how many examples were used for training
-        #with open('log_client_'+self.id+'.txt', 'a') as f:
-            #f.write('\nclient: ' + self.id + ' in round '+str(server_round)+' used ' + str(num_examples_train) + ' samples for training')
+        # write on file (with id_name client) how many examples were used for training
+        #with open('log_client_'+self.id_name+'.txt', 'a') as f:
+            #f.write('\nclient: ' + self.id_name + ' in round '+str(server_round)+' used ' + str(num_examples_train) + ' samples for training')
             #f.write('\n----------------------------------')
             #f.write('\n\n')
 
         
-        print('\nclient: ' + self.id + ' in round '+str(server_round)+' used ' + str(num_examples_train) + ' samples for training')
+        print('\nclient: ' + self.id_name + ' in round '+str(server_round)+' used ' + str(num_examples_train) + ' samples for training')
         print('num_clients_last_round: ', num_clients_last_round, 'num_clients_current_round: ', num_clients_current_round)
 
 
@@ -109,6 +118,8 @@ class CifarClient(fl.client.NumPyClient):
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Flower Client")
     parser.add_argument('--ip_address', type=str, default="0.0.0.0", help='IP address of the server.')
+    # id client (a number)
+    parser.add_argument('--client_id', type=int, default="0", help='ID of the client.')
     
 
     return parser.parse_args()
@@ -138,10 +149,10 @@ def main():
     
 
     # Start Flower client
-    client = CifarClient(model, x_train, y_train, x_test, y_test)
+    client = CifarClient(model, x_train, y_train, x_test, y_test, id=args.client_id)
 
     server_ip = args.ip_address
-    port = "8080"
+    port = "8089"
     server_address = server_ip+":"+port
     fl.client.start_numpy_client(
         server_address=server_address, 
@@ -150,12 +161,18 @@ def main():
 
 def get_random_subset(x, y, fraction=0.1):
     indices = np.random.choice(len(x), int(len(x) * fraction), replace=False)
+
+    # do the same but with seed of np
+    #indices = np.random.RandomState(seed=42).choice(len(x), int(len(x) * fraction), replace=False)
+
     return x[indices], y[indices]
 
-def get_partition(x, y, i, num_partitions):
+def get_partition(x, y, i, num_partitions): # take the i-th partition of the dataset given the number of partitions
     size = len(x) // num_partitions
     start = i * size
     end = start + size
+    # print take dataset from to
+    print('----->take dataset from ', start, ' to ', end)
     return x[start:end], y[start:end]
 
 
