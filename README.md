@@ -193,7 +193,7 @@ The federated learning system underwent rigorous testing to evaluate its perform
 | 2023-11-10 12:36:45   | 20 (Static)                 | 2023-11-10 12:40:15  | 0:03:29        |
 | 2023-11-10 13:10:11   | 2-3 (Dynamic)               | 2023-11-10 13:50:12  | 0:40:01        |
 
-*Note: The static tests were conducted over 3 rounds, while the dynamic test varied across 10 rounds, starting with two clients to activate the auto-scaling function.*
+*Note: The static tests were conducted over 3 rounds, while the dynamic test varied across 10 rounds.*
 
 It's important to note that performance on AWS's free-tier can be inconsistent. System limitations, such as reduced speed of virtual machines or network constraints, can be trigghered by AWS to ensure fair usage of free-tier resources. This can affect the training process and lead to performance variability.
 
