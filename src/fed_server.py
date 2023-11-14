@@ -149,11 +149,12 @@ def start_flower_server(ip_address, port = "8080", rounds = 3, clients = 2):
     
     
     strategy = MyStrategy(
-        # Fraction of clients used during training. In case min_fit_clients > fraction_fit * available_clients, min_fit_clients will still be sampled. Defaults to 1.0.
+        # Fraction of clients used during training. 
+        # In case min_fit_clients > fraction_fit * available_clients, min_fit_clients will still be sampled. Defaults to 1.0.
         fraction_fit=1, # 0.1,  
         #fraction_eval=0.1,
         min_fit_clients=clients,       # Minimum number of clients used during training. Default 2. Always >= min_available_clients.
-        min_available_clients=clients, # Minimum number of total clients in the system. server will wait until at least 2 clients are connected.
+        min_available_clients=clients, # Minimum number of total clients in the system. server will wait until at least this number of clients is available. Default 2.
         evaluate_fn=get_evaluate_fn(model), # server-side evaluation function
         on_fit_config_fn=fit_config,
         on_evaluate_config_fn=evaluate_config,
