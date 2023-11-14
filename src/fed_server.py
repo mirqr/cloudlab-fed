@@ -1,3 +1,4 @@
+import os
 import logging
 import sys
 from datetime import datetime
@@ -16,7 +17,12 @@ from flwr.server.client_proxy import ClientProxy
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
+# Make TensorFlow log less verbose
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+# gpu growth
+os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
+# disable gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 num_clients_last_round = 0
 start_time = None
@@ -55,7 +61,8 @@ def get_evaluate_fn(model):
 
     # Load data and model here to avoid the overhead of doing it in `evaluate` itself
     _ , (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
-    #(x_train, y_train), _ = tf.keras.datasets.fashion_mnist.load_data()
+    # Normalize data
+    x_test = x_test / 255.0
 
     # Use test data for evaluation
     x_val, y_val = x_test, y_test
