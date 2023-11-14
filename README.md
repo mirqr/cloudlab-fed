@@ -105,16 +105,21 @@ During the training cycle, each federated client uses its subset of fashion-mins
 0. **Testing the Federated Learning Script Locally**:
     - Before deploying the CloudFormation stack, you can test the federated learning script locally.
     - Navigate to the `src/` directory in your local clone of the repository.
-    - Ensure that you have Python>=3.7 installed on your machine along with the TensorFlow and Flower (flwr) packages. These are necessary to run the federated learning scripts. Reference version of the packages used in this project are `TensorFlow==2.14.0`, `flwr==1.15`
-    - You can install TensorFlow and Flower using pip:
+    - Ensure that you have Python>=3.7 installed on your machine along with the TensorFlow and Flower (flwr) packages. These are necessary to run the federated learning scripts. Reference version of the packages used in this project are `TensorFlow==2.14.0`, `flwr==1.5`
+    - You can set up a virtual environment and install the packages using the following commands:
 
     ```bash
-    pip install tensorflow flwr
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -U pip setuptools wheel
+    pip install -r requirements.txt
     ```
+
 
     - Run the `run_local.sh` script to simulate the federated learning process on your local machine.
 
     ```bash
+    cd src/
     ./run_local.sh
     ```
 
